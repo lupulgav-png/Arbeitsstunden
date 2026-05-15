@@ -521,10 +521,141 @@
       pointer-events: none;
     }
 
+    /* ══ NEUE FEATURES 2 ════════════════════════════════════ */
+
+    /* Mehr Body-Padding für Bottom Nav */
+    body { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+
+    /* 1 – Bottom Navigation */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px;
+      background: rgba(22,24,28,0.92);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: 10px 20px calc(10px + env(safe-area-inset-bottom));
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px; z-index: 50;
+    }
+    .bnav-track {
+      position: relative; display: flex; gap: 6px;
+      background: var(--surface2); border-radius: 12px; padding: 4px;
+      width: 100%;
+    }
+    .bnav-indicator {
+      position: absolute; top: 4px; bottom: 4px; width: calc(50% - 4px);
+      background: var(--accent); border-radius: 9px;
+      transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
+      transform: translateX(0);
+    }
+    .bnav-indicator.right { transform: translateX(calc(100% + 6px)); }
+    .bnav-btn {
+      flex: 1; position: relative; z-index: 1;
+      background: none; border: none; color: var(--muted);
+      font-family: 'Outfit', sans-serif; font-size: 0.75rem;
+      font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 8px; cursor: pointer; border-radius: 9px;
+      transition: color 0.2s;
+    }
+    .bnav-btn.active { color: #1a1000; }
+
+    /* 2 – 3D Card Tilt */
+    .stats-card {
+      transform-style: preserve-3d;
+      transition: transform 0.4s cubic-bezier(0.22,1,0.36,1), box-shadow 0.4s;
+      will-change: transform;
+      cursor: default;
+    }
+    .stats-card .tilt-sheen {
+      position: absolute; inset: 0; border-radius: 12px;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.12), transparent 60%);
+      pointer-events: none; opacity: 0; transition: opacity 0.3s;
+    }
+    .stats-card { position: relative; overflow: hidden; }
+    .stats-card:hover .tilt-sheen, .stats-card.tilting .tilt-sheen { opacity: 1; }
+
+    /* 5 – Aurora Glow Border auf Stats-Karte */
+    @keyframes aurora-rotate {
+      0%   { --aurora-angle: 0deg; }
+      100% { --aurora-angle: 360deg; }
+    }
+    @property --aurora-angle {
+      syntax: '<angle>'; inherits: false; initial-value: 0deg;
+    }
+    .stats-card::before {
+      content: ''; position: absolute; inset: -1px; border-radius: 13px;
+      background: conic-gradient(from var(--aurora-angle),
+        transparent 0%, #c8a96e 12%, #5dba7f 25%, #7eb8e0 38%,
+        #c8a96e 50%, transparent 62%, #5dba7f 75%, transparent 88%);
+      animation: aurora-rotate 6s linear infinite;
+      z-index: -1; opacity: 0.55;
+    }
+
+    /* 4 – Staggered List */
+    .list-entry { animation-delay: calc(var(--i, 0) * 0.055s); }
+
+    /* 8 – Wochenstreifen */
+    .week-strip {
+      display: flex; gap: 6px; justify-content: space-between;
+      padding: 10px 0 4px;
+    }
+    .week-day {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+      cursor: pointer;
+    }
+    .week-day-label { font-size: 0.52rem; color: var(--dimmer); text-transform: uppercase; letter-spacing: 0.04em; }
+    .week-day-circle {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 1.5px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.58rem; color: var(--dimmer);
+      position: relative; overflow: hidden;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .week-day-circle .fill {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: rgba(200,169,110,0.35);
+      transition: height 0.4s cubic-bezier(0.22,1,0.36,1);
+    }
+    .week-day-circle .day-n { position: relative; z-index: 1; }
+    .week-day.has-entry .week-day-circle { border-color: rgba(200,169,110,0.5); }
+    .week-day.is-today .week-day-circle {
+      border-color: var(--accent); border-width: 2px;
+      box-shadow: 0 0 0 3px rgba(200,169,110,0.15);
+    }
+    .week-day:active .week-day-circle { transform: scale(0.88); }
+
+    /* 7 – Liquid Blob */
+    #liquid-blob {
+      position: fixed; top: -20%; left: -20%;
+      width: 140%; height: 140%;
+      pointer-events: none; z-index: 0; opacity: 0.045;
+    }
+    .content, .header { position: relative; z-index: 1; }
+
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
+
+<!-- ══ LIQUID BLOB ════════════════════════════════════════ -->
+<svg id="liquid-blob" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="blob-filter">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="4" seed="2" result="noise">
+        <animate attributeName="baseFrequency" values="0.012;0.018;0.012" dur="18s" repeatCount="indefinite"/>
+        <animate attributeName="seed" values="2;8;2" dur="30s" repeatCount="indefinite"/>
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="120" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+  <ellipse id="blob-shape" cx="400" cy="400" rx="280" ry="240" filter="url(#blob-filter)" fill="#c8a96e">
+    <animate attributeName="rx" values="280;320;260;300;280" dur="22s" repeatCount="indefinite"/>
+    <animate attributeName="ry" values="240;200;280;220;240" dur="18s" repeatCount="indefinite"/>
+    <animate attributeName="cx" values="400;430;370;410;400" dur="25s" repeatCount="indefinite"/>
+    <animate attributeName="cy" values="400;360;440;380;400" dur="20s" repeatCount="indefinite"/>
+  </ellipse>
+</svg>
 
 <!-- ══ TOAST ══════════════════════════════════════════════ -->
 <div class="toast" id="toast"></div>
@@ -580,12 +711,8 @@
         <button class="btn-quick" id="btn-halbtag">+ Halbtag (4.5h)</button>
       </div>
       <button class="btn-save" id="btn-save" style="margin-top:8px">Speichern</button>
-    </div>
-
-    <!-- TABS -->
-    <div class="tabs">
-      <button class="tab-btn active" id="tab-kal" onclick="switchTab('kalender')">Kalender</button>
-      <button class="tab-btn"        id="tab-lst" onclick="switchTab('liste')">Liste</button>
+      <!-- Wochenstreifen -->
+      <div class="week-strip" id="week-strip"></div>
     </div>
 
     <!-- KALENDER -->
@@ -595,7 +722,8 @@
         <h2 id="month-title"></h2>
         <button class="nav-btn" onclick="changeMonth(1)">&#8250;</button>
       </div>
-      <div class="stats-card">
+      <div class="stats-card" id="stats-card">
+        <div class="tilt-sheen"></div>
         <div class="stats-label" id="total-label">Total</div>
         <div class="stats-grid">
           <div class="stat"><div class="s-label">Tage</div><div class="s-val dim" id="stat-tage">—</div></div>
@@ -730,6 +858,15 @@
   </div>
 </div>
 
+<!-- ══ BOTTOM NAV ═════════════════════════════════════════ -->
+<nav class="bottom-nav" id="bottom-nav">
+  <div class="bnav-track">
+    <div class="bnav-indicator" id="bnav-indicator"></div>
+    <button class="bnav-btn active" id="bnav-kal" onclick="switchTab('kalender')">Kalender</button>
+    <button class="bnav-btn"        id="bnav-lst" onclick="switchTab('liste')">Liste</button>
+  </div>
+</nav>
+
 <script>
 // ── Konstanten ──────────────────────────────────────────
 const PASS        = 'arbeit2026';
@@ -831,6 +968,111 @@ function animateCounter(el, endVal, formatter, duration) {
     else el.textContent = formatter(endVal);
   }
   requestAnimationFrame(tick);
+}
+
+// ── BEGRÜSSUNG ───────────────────────────────────────────
+function greeting() {
+  const h = new Date().getHours();
+  if (h >= 5  && h < 11) return 'Guten Morgen';
+  if (h >= 11 && h < 14) return 'Guten Mittag';
+  if (h >= 14 && h < 18) return 'Guten Nachmittag';
+  if (h >= 18 && h < 23) return 'Guten Abend';
+  return 'Gute Nacht';
+}
+
+// ── SWIPE-GESTE MONATSWECHSEL ────────────────────────────
+function initSwipe() {
+  const cal = document.getElementById('view-kalender');
+  let startX = 0, startY = 0, dragging = false;
+  cal.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    dragging = true;
+  }, { passive: true });
+  cal.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = Math.abs(e.touches[0].clientY - startY);
+    if (dy > 30) { dragging = false; return; }
+    const body = document.getElementById('cal-body');
+    if (body) body.style.transform = `translateX(${Math.sign(dx) * Math.min(Math.abs(dx) * 0.35, 28)}px)`;
+  }, { passive: true });
+  cal.addEventListener('touchend', e => {
+    if (!dragging) return;
+    dragging = false;
+    const dx = e.changedTouches[0].clientX - startX;
+    const body = document.getElementById('cal-body');
+    if (body) body.style.transform = '';
+    if (Math.abs(dx) > 60) changeMonth(dx < 0 ? 1 : -1);
+  }, { passive: true });
+}
+
+// ── 3D CARD TILT ─────────────────────────────────────────
+function initCardTilt() {
+  const card = document.getElementById('stats-card');
+  if (!card) return;
+  const sheen = card.querySelector('.tilt-sheen');
+  const MAX = 8;
+  function applyTilt(x, y) {
+    const rect = card.getBoundingClientRect();
+    const cx = (x - rect.left) / rect.width  - 0.5;
+    const cy = (y - rect.top)  / rect.height - 0.5;
+    const rx = -cy * MAX, ry = cx * MAX;
+    card.style.transform = `perspective(700px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.02)`;
+    card.style.boxShadow = `${-ry*0.8}px ${rx*0.8}px 24px rgba(0,0,0,0.35)`;
+    if (sheen) sheen.style.background =
+      `radial-gradient(circle at ${(cx+0.5)*100}% ${(cy+0.5)*100}%, rgba(255,255,255,0.14), transparent 60%)`;
+    card.classList.add('tilting');
+  }
+  function resetTilt() {
+    card.style.transform = '';
+    card.style.boxShadow = '';
+    card.classList.remove('tilting');
+  }
+  card.addEventListener('mousemove', e => applyTilt(e.clientX, e.clientY));
+  card.addEventListener('mouseleave', resetTilt);
+  card.addEventListener('touchmove', e => {
+    e.preventDefault();
+    applyTilt(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: false });
+  card.addEventListener('touchend', resetTilt);
+}
+
+// ── WOCHENSTREIFEN ───────────────────────────────────────
+function renderWeekStrip() {
+  const strip = document.getElementById('week-strip');
+  if (!strip) return;
+  const today = new Date();
+  const dow = (today.getDay() + 6) % 7; // Mo=0
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - dow + i);
+    days.push(d);
+  }
+  const labels = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+  const tKey = todayKey();
+  strip.innerHTML = days.map((d, i) => {
+    const key = d.toISOString().slice(0,10);
+    const entry = entries[key];
+    const isToday = key === tKey;
+    const pct = entry ? Math.min((entry.vm + entry.nm) / SOLL_TAG, 1) * 100 : 0;
+    const cls = `week-day${entry?' has-entry':''}${isToday?' is-today':''}`;
+    const click = entry ? `onclick="loadEntry('${key}')"` : '';
+    return `<div class="${cls}" ${click}>
+      <div class="week-day-label">${labels[i]}</div>
+      <div class="week-day-circle">
+        <div class="fill" style="height:${pct}%"></div>
+        <span class="day-n">${d.getDate()}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── BLOB FARBE nach Saldo ────────────────────────────────
+function updateBlobColor(positive) {
+  const blob = document.getElementById('blob-shape');
+  if (blob) blob.setAttribute('fill', positive ? '#5dba7f' : '#c8a96e');
 }
 
 // ── #3 DYNAMISCHER HINTERGRUND ──────────────────────────
@@ -980,7 +1222,7 @@ function updateDerived() {
 
 function updateHeader() {
   document.getElementById('header-sub').textContent =
-    `CHF ${settings.rate.toFixed(2)}/h · Soll ${fmtCHF(settings.monatssoll)}/Mt · ${sollH().toFixed(2)}h`;
+    `${greeting()} · CHF ${settings.rate.toFixed(2)}/h · ${sollH().toFixed(2)}h Soll`;
 }
 
 // ── APP INIT ────────────────────────────────────────────
@@ -1039,6 +1281,7 @@ function initApp() {
     }
     entries[date]={vm,nm}; saveEntries(); render();
     bounceCell(date);
+    renderWeekStrip();
     haptic(60);
     showToast('✓ Gespeichert');
     inpVm.value=''; inpNm.value=''; preview.classList.add('hidden');
@@ -1104,7 +1347,7 @@ function initApp() {
     } else {
       entries = pendingImport;
     }
-    saveEntries(); closeImp(); render();
+    saveEntries(); closeImp(); render(); renderWeekStrip();
     showToast('↑ Import erfolgreich');
   });
   const closeErr=()=>document.getElementById('modal-err').classList.add('hidden');
@@ -1128,6 +1371,10 @@ function initApp() {
   // Show skeleton then render
   showSkeletonCalendar();
   setTimeout(() => renderCalendar(), 280);
+
+  initSwipe();
+  initCardTilt();
+  renderWeekStrip();
 }
 
 // ── Delete (with confirm) ────────────────────────────────
@@ -1152,8 +1399,10 @@ function switchTab(t) {
   currentTab=t;
   document.getElementById('view-kalender').classList.toggle('hidden',t!=='kalender');
   document.getElementById('view-liste').classList.toggle('hidden',t!=='liste');
-  document.getElementById('tab-kal').classList.toggle('active',t==='kalender');
-  document.getElementById('tab-lst').classList.toggle('active',t==='liste');
+  document.getElementById('bnav-kal').classList.toggle('active',t==='kalender');
+  document.getElementById('bnav-lst').classList.toggle('active',t==='liste');
+  const indicator = document.getElementById('bnav-indicator');
+  if (indicator) indicator.classList.toggle('right', t==='liste');
   render();
 }
 
@@ -1196,6 +1445,7 @@ function renderCalendar() {
   const mChfSal = mChfIst - mChfSol;
 
   updateProgressRing(mChfSol > 0 ? mChfIst / mChfSol : 0);
+  updateBlobColor(mChfSal >= 0);
 
   const setStat=(id,val,cls)=>{ const el=document.getElementById(id); el.textContent=val; el.className='s-val'+(cls?' '+cls:''); };
 
@@ -1299,7 +1549,7 @@ function renderList() {
     byMonth[mk].push(key);
   });
 
-  let html='';
+  let html='', staggerIdx=0;
   Object.keys(byMonth).sort().reverse().forEach(mk=>{
     const [y,m]=mk.split('-').map(Number);
     const mKeys=byMonth[mk];
@@ -1308,7 +1558,7 @@ function renderList() {
     html+=`<div class="list-month-header">${MONTHS[m-1]} ${y} · ${fmtHRaw(mH)}<span>${fmtCHF(mChf)}</span></div>`;
     mKeys.forEach(key=>{
       const e=entries[key], sal=saldo(e.vm,e.nm), chf=(e.vm+e.nm)*settings.rate;
-      html+=`<div class="list-entry" id="entry-${key}">
+      html+=`<div class="list-entry" id="entry-${key}" style="--i:${staggerIdx++}">
         <div class="list-entry-top">
           <span class="list-entry-date">${formatDate(key)}</span>
           <div style="display:flex;align-items:center;gap:8px">
