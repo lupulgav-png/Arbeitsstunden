@@ -248,6 +248,30 @@
       100% { background-position: -200% 0; }
     }
 
+    /* ── ANIMATION 1: fadeUp für List-Einträge ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .list-entry { animation: fadeUp 0.25s ease both; }
+
+    /* ── ANIMATION 2: shake für ungültige Inputs ── */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%       { transform: translateX(-6px); }
+      40%       { transform: translateX(6px); }
+      60%       { transform: translateX(-4px); }
+      80%       { transform: translateX(4px); }
+    }
+    .field input.shake { animation: shake 0.35s ease; }
+
+    /* ── ANIMATION 3: pulse für heutige Kalender-Zelle ── */
+    @keyframes today-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(200,169,110,0.45); }
+      50%       { box-shadow: 0 0 0 5px rgba(200,169,110,0); }
+    }
+    .cal-cell.is-today { animation: today-pulse 2.2s ease-in-out infinite; }
+
     .cal-cell .day-num { font-size: 0.6rem; color: var(--dimmer); margin-bottom: 2px; padding-top: 2px; line-height: 1; }
     .cal-cell .day-num.weekend { opacity: 0.5; }
     .cal-cell .day-num.today {
@@ -722,7 +746,15 @@ function initApp() {
   btnSave.addEventListener('click', () => {
     const date=inpDate.value;
     const vm=parseFloat(inpVm.value)||0, nm=parseFloat(inpNm.value)||0;
-    if (!date||(vm===0&&nm===0)) return;
+    if (!date||(vm===0&&nm===0)) {
+      [inpVm, inpNm].forEach(el => {
+        el.classList.remove('shake');
+        void el.offsetWidth; // reflow damit Animation neu startet
+        el.classList.add('shake');
+        el.addEventListener('animationend', () => el.classList.remove('shake'), {once:true});
+      });
+      return;
+    }
     entries[date]={vm,nm}; saveEntries(); render();
     showToast('✓ Gespeichert');
     inpVm.value=''; inpNm.value=''; preview.classList.add('hidden');
@@ -923,7 +955,7 @@ function renderCalendar() {
       bgStyle=`style="background:rgba(200,169,110,${alpha.toFixed(2)})"`;
     }
 
-    const cellCls='cal-cell'+(entry?' has-entry':'');
+    const cellCls='cal-cell'+(entry?' has-entry':'')+(isToday?' is-today':'');
     let inner=`<div class="${dnCls}">${day}</div>`;
     if(entry){
       inner+=`<div class="cell-h">${entry.vm+entry.nm}h</div>`;
