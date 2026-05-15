@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Arbeitsstunden" />
+  <meta name="theme-color" content="#2c2e35" />
+  <title>Arbeitsstunden Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg:       #2c2e35;
+      --surface:  #34363e;
+      --surface2: #3d3f48;
+      --border:   rgba(255,255,255,0.07);
+      --border2:  rgba(255,255,255,0.04);
+      --text:     #edeef2;
+      --muted:    #7c8190;
+      --dim:      #555a66;
+      --dimmer:   #6b7080;
+      --accent:   #c8a96e;
+      --green:    #5dba7f;
+      --red:      #e07272;
+      --entry-bg: #3c3e48;
+    }
+
+    html { background: var(--bg); -webkit-font-smoothing: antialiased; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh; max-width: 480px; margin: 0 auto;
+      padding-bottom: 50px; padding-top: env(safe-area-inset-top);
+    }
+
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    input[type=number] { -moz-appearance: textfield; }
+    input[type=date]::-webkit-calendar-picker-indicator { filter: invert(1) opacity(0.35); cursor: pointer; }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 2px; }
+
+    /* ── LOCK ── */
+    #lock-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+    .lock-card {
+      width: 100%; max-width: 300px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 2.25rem 1.75rem; text-align: center;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.45);
+    }
+    .lock-icon { font-size: 2rem; margin-bottom: 1rem; }
+    .lock-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.2rem; }
+    .lock-sub { font-size: 0.75rem; color: var(--muted); margin-bottom: 1.5rem; }
+    .lock-input {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 0.75rem 1rem; color: var(--text);
+      font-family: 'Outfit', sans-serif; font-size: 16px;
+      outline: none; text-align: center; margin-bottom: 0.625rem;
+      transition: border-color 0.18s, box-shadow 0.18s; -webkit-appearance: none;
+    }
+    .lock-input:focus {
+      border-color: rgba(200,169,110,0.4);
+      box-shadow: 0 0 0 3px rgba(200,169,110,0.08);
+    }
+    .lock-input.error { border-color: var(--red); box-shadow: 0 0 0 3px rgba(224,114,114,0.1); }
+    .lock-error { font-size: 0.72rem; color: var(--red); min-height: 1rem; margin-bottom: 0.5rem; }
+    .lock-btn {
+      width: 100%; background: var(--text); color: var(--bg);
+      border: none; border-radius: 10px; padding: 0.75rem;
+      font-family: 'Outfit', sans-serif; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+      position: relative; overflow: hidden;
+    }
+    .lock-btn:active { opacity: 0.85; }
+
+    /* ── HEADER (glassmorphism) ── */
+    .header {
+      background: rgba(44, 46, 53, 0.78);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 15px 15px 12px; position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: flex-start; justify-content: space-between;
+    }
+    .header h1 { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; }
+    .header p  { font-size: 0.65rem; color: var(--dimmer); margin-top: 3px; letter-spacing: 0.04em; }
+    .logout-btn {
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      border-radius: 8px; padding: 0.35rem 0.625rem;
+      font-family: 'Outfit', sans-serif; font-size: 0.7rem; cursor: pointer;
+      transition: color 0.15s, border-color 0.15s; white-space: nowrap;
+    }
+
+    /* ── CONTENT ── */
+    .content { padding: 13px; }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 14px; margin-bottom: 13px;
+    }
+    .card-label { font-size: 0.62rem; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; }
+
+    /* ── SETTINGS CARD ── */
+    .settings-header {
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; margin-bottom: 0;
+    }
+    .settings-header .card-label { margin-bottom: 0; }
+    .settings-chevron { font-size: 0.7rem; color: var(--dim); transition: transform 0.2s; }
+    .settings-chevron.open { transform: rotate(180deg); }
+    .settings-body { margin-top: 12px; }
+    .settings-derived {
+      background: var(--surface2); border-radius: 9px; padding: 10px 12px;
+      margin-bottom: 10px; font-size: 0.75rem; color: var(--muted);
+    }
+    .settings-derived b { color: var(--accent); font-weight: 600; font-size: 0.875rem; }
+
+    /* ── FORM ── */
+    .field { margin-bottom: 10px; }
+    .field label { display: block; font-size: 0.62rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+    .field input {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 0.72rem 0.875rem; color: var(--text);
+      font-family: 'Outfit', sans-serif; font-size: 16px;
+      outline: none; -webkit-appearance: none;
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+    .field input:focus {
+      border-color: rgba(200,169,110,0.4);
+      box-shadow: 0 0 0 3px rgba(200,169,110,0.08);
+    }
+    .field input::placeholder { color: var(--dimmer); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 11px; }
+    .grid-2 .field { margin-bottom: 0; }
+
+    .preview { display: flex; gap: 14px; font-size: 0.78rem; color: var(--muted); margin-bottom: 11px; }
+    .preview span b { color: var(--text); font-weight: 500; }
+
+    /* ── BUTTONS ── */
+    .btn-save {
+      width: 100%; background: var(--text); color: var(--bg);
+      border: none; border-radius: 10px; padding: 0.78rem;
+      font-family: 'Outfit', sans-serif; font-size: 0.875rem; font-weight: 600;
+      letter-spacing: 0.03em; cursor: pointer;
+      transition: background 0.25s, transform 0.1s, box-shadow 0.2s;
+      position: relative; overflow: hidden;
+    }
+    .btn-save:active { transform: scale(0.98); }
+    .btn-save.saved { background: var(--green); color: #0a1a10; }
+
+    /* ripple */
+    .btn-save .ripple, .lock-btn .ripple {
+      position: absolute; border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      transform: scale(0); animation: ripple-anim 0.5s linear;
+      pointer-events: none;
+    }
+    @keyframes ripple-anim {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    .btn-settings {
+      width: 100%; background: var(--surface2); color: var(--muted);
+      border: 1px solid var(--border); border-radius: 10px; padding: 0.65rem;
+      font-family: 'Outfit', sans-serif; font-size: 0.78rem; font-weight: 500;
+      cursor: pointer; transition: color 0.15s;
+    }
+    .btn-settings:active { opacity: 0.8; }
+
+    /* ── TABS ── */
+    .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 13px; }
+    .tab-btn {
+      background: transparent; color: var(--muted); border: 1px solid var(--border);
+      border-radius: 10px; padding: 9px; font-family: 'Outfit', sans-serif;
+      font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase;
+      cursor: pointer; transition: all 0.18s;
+    }
+    .tab-btn.active { background: var(--surface2); color: var(--text); border-color: rgba(255,255,255,0.13); }
+
+    /* ── MONTH NAV ── */
+    .month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
+    .month-nav h2 { font-size: 0.975rem; font-weight: 600; }
+    .nav-btn {
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      border-radius: 9px; width: 35px; height: 35px; font-size: 1.1rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .nav-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+    /* ── STATS ── */
+    .stats-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 13px; margin-bottom: 11px;
+    }
+    .stats-label { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 9px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+    .stats-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+    .stats-divider { border-top: 1px solid var(--border2); margin: 10px 0; }
+    .stat { text-align: center; }
+    .stat.left { text-align: left; }
+    .stat .s-label { font-size: 0.56rem; color: var(--dimmer); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
+    .stat .s-val { font-size: 0.9rem; font-weight: 600; color: var(--text); transition: color 0.3s; }
+    .stat .s-val.lg { font-size: 1.1rem; }
+    .stat .s-val.green { color: var(--green); }
+    .stat .s-val.red   { color: var(--red); }
+    .stat .s-val.dim   { color: var(--dimmer); }
+    .stat .s-val.accent { color: var(--accent); }
+
+    /* ── CALENDAR ── */
+    .calendar { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .cal-header { display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid var(--border2); }
+    .cal-header div { padding: 7px 0; text-align: center; font-size: 0.58rem; color: var(--dimmer); letter-spacing: 0.04em; text-transform: uppercase; }
+
+    /* slide animation for month change */
+    .cal-body {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      animation: cal-in 0.22s ease;
+    }
+    @keyframes cal-in-left  { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes cal-in-right { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
+    .cal-body.slide-left  { animation: cal-in-left  0.22s ease; }
+    .cal-body.slide-right { animation: cal-in-right 0.22s ease; }
+
+    .cal-cell {
+      min-height: 54px; border-right: 1px solid var(--border2); border-bottom: 1px solid var(--border2);
+      padding: 4px 3px; display: flex; flex-direction: column; align-items: center;
+      transition: background 0.15s;
+    }
+    .cal-cell.has-entry { cursor: pointer; }
+    .cal-cell.has-entry:active { filter: brightness(1.12); }
+
+    /* skeleton pulse */
+    .cal-cell.skeleton {
+      background: linear-gradient(90deg, var(--surface2) 25%, #44464f 50%, var(--surface2) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-pulse 1.2s ease infinite;
+    }
+    @keyframes skeleton-pulse {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .cal-cell .day-num { font-size: 0.6rem; color: var(--dimmer); margin-bottom: 2px; padding-top: 2px; line-height: 1; }
+    .cal-cell .day-num.weekend { opacity: 0.5; }
+    .cal-cell .day-num.today {
+      background: var(--accent); color: #1a1000;
+      border-radius: 50%; width: 20px; height: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.6rem; font-weight: 700; padding: 0; margin-bottom: 2px;
+    }
+    .cal-cell .cell-h   { font-size: 0.64rem; color: var(--muted); font-weight: 500; line-height: 1.2; }
+    .cal-cell .cell-chf { font-size: 0.58rem; color: var(--accent); }
+    .cal-hint { font-size: 0.6rem; color: var(--dimmer); text-align: center; margin-top: 8px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+    /* ── LIST ── */
+    .list-total { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 13px; margin-bottom: 11px; }
+    .list-entries { display: flex; flex-direction: column; gap: 6px; }
+    .list-month-header {
+      font-size: 0.65rem; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.08em; padding: 4px 2px; margin-top: 6px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .list-month-header span { color: var(--accent); font-weight: 600; font-size: 0.72rem; }
+    .list-entry {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 11px 13px;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .list-entry.deleting { transform: translateX(12px); opacity: 0; }
+    .list-entry-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+    .list-entry-date { font-size: 0.875rem; font-weight: 500; }
+    .list-entry-chf { font-size: 0.875rem; font-weight: 600; color: var(--accent); }
+    .delete-btn {
+      background: none; border: 1px solid var(--border); color: var(--dim);
+      border-radius: 7px; width: 26px; height: 26px; font-size: 1rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .delete-btn:hover { border-color: var(--red); color: var(--red); }
+    .list-entry-nums { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+    .list-entry-nums span { font-size: 0.78rem; color: var(--muted); }
+    .list-entry-nums span b { color: var(--text); font-weight: 500; }
+    .saldo-cell { text-align: right; font-size: 0.78rem; font-weight: 600; }
+    .empty { color: var(--dimmer); font-size: 0.875rem; text-align: center; padding: 2.5rem 0; }
+
+    /* ── BACKUP ── */
+    .backup-section { margin-top: 14px; }
+    .backup-label { font-size: 0.6rem; color: var(--dimmer); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 7px; }
+    .backup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .btn-backup {
+      background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+      border-radius: 10px; padding: 0.625rem; font-family: 'Outfit', sans-serif;
+      font-size: 0.78rem; cursor: pointer; text-align: center; display: block; width: 100%;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .btn-backup:hover { color: var(--text); border-color: rgba(255,255,255,0.18); }
+    label.btn-backup { cursor: pointer; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 1.8rem; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: var(--green); color: #0a1a10;
+      padding: 0.5rem 1.25rem; border-radius: 20px;
+      font-size: 0.8rem; font-weight: 600; letter-spacing: 0.03em;
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+      z-index: 200; pointer-events: none; opacity: 0;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      display: flex; align-items: flex-end; justify-content: center;
+      z-index: 100; padding: 1rem;
+    }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; width: 100%; max-width: 420px;
+      padding: 1.4rem; animation: up 0.22s ease;
+    }
+    @keyframes up { from { transform: translateY(12px); opacity: 0; } }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.875rem; }
+    .modal-title { font-size: 1rem; font-weight: 600; }
+    .modal-x {
+      width: 28px; height: 28px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--surface2);
+      color: var(--muted); cursor: pointer; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-body { font-size: 0.875rem; color: var(--muted); line-height: 1.65; margin-bottom: 1.1rem; }
+    .modal-body strong { color: var(--text); font-weight: 500; }
+    .modal-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .btn-cancel  { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem; font-family: 'Outfit', sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; }
+    .btn-confirm { background: var(--text); color: var(--bg); border: none; border-radius: 10px; padding: 0.7rem; font-family: 'Outfit', sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; }
+    .btn-confirm.danger { background: var(--red); color: #fff; }
+    .btn-ok      { width: 100%; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem; font-family: 'Outfit', sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ══ TOAST ══════════════════════════════════════════════ -->
+<div class="toast" id="toast"></div>
+
+<!-- ══ LOCK ══════════════════════════════════════════════ -->
+<div id="lock-screen">
+  <div class="lock-card">
+    <div class="lock-icon">⏱️</div>
+    <div class="lock-title">Arbeitsstunden</div>
+    <div class="lock-sub">Bitte Passwort eingeben</div>
+    <input type="password" class="lock-input" id="lock-pw" placeholder="Passwort">
+    <div class="lock-error" id="lock-err"></div>
+    <button class="lock-btn" id="lock-btn">Einloggen</button>
+  </div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════════ -->
+<div id="app" class="hidden">
+
+  <div class="header">
+    <div>
+      <h1>Arbeitsstunden</h1>
+      <p id="header-sub">CHF 32.20/h · Soll CHF 2760.30/Mt</p>
+    </div>
+    <button class="logout-btn" id="logout-btn">Logout</button>
+  </div>
+
+  <div class="content">
+
+    <!-- EINTRAG -->
+    <div class="card">
+      <div class="card-label">Eintrag hinzufügen</div>
+      <div class="field">
+        <label>Datum</label>
+        <input type="date" id="inp-date" />
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Vormittag (h)</label>
+          <input type="number" id="inp-vm" step="0.25" min="0" max="12" placeholder="4.5" />
+        </div>
+        <div class="field">
+          <label>Nachmittag (h)</label>
+          <input type="number" id="inp-nm" step="0.25" min="0" max="12" placeholder="4" />
+        </div>
+      </div>
+      <div class="preview hidden" id="preview">
+        <span>Gesamt: <b id="prev-total">—</b></span>
+        <span>Saldo: <b id="prev-saldo">—</b></span>
+        <span>CHF: <b id="prev-chf">—</b></span>
+      </div>
+      <button class="btn-save" id="btn-save">Speichern</button>
+    </div>
+
+    <!-- EINSTELLUNGEN -->
+    <div class="card">
+      <div class="settings-header" onclick="toggleSettings()">
+        <div class="card-label">Einstellungen</div>
+        <div class="settings-chevron" id="settings-chevron">▾</div>
+      </div>
+      <div class="settings-body hidden" id="settings-body">
+        <div class="grid-2" style="margin-top:12px">
+          <div class="field">
+            <label>Stundenlohn (CHF)</label>
+            <input type="number" id="inp-rate" step="0.05" min="0" placeholder="32.20" />
+          </div>
+          <div class="field">
+            <label>Monatssoll (CHF)</label>
+            <input type="number" id="inp-monatssoll" step="0.10" min="0" placeholder="2760.30" />
+          </div>
+        </div>
+        <div class="settings-derived" id="settings-derived">
+          Monatliches Stunden-Soll: <b id="soll-h-derived">—</b>
+        </div>
+        <button class="btn-settings" id="btn-settings-save">Speichern</button>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-kal" onclick="switchTab('kalender')">Kalender</button>
+      <button class="tab-btn"        id="tab-lst" onclick="switchTab('liste')">Liste</button>
+    </div>
+
+    <!-- KALENDER -->
+    <div id="view-kalender">
+      <div class="month-nav">
+        <button class="nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+        <h2 id="month-title"></h2>
+        <button class="nav-btn" onclick="changeMonth(1)">&#8250;</button>
+      </div>
+      <div class="stats-card">
+        <div class="stats-label" id="total-label">Total</div>
+        <div class="stats-grid">
+          <div class="stat"><div class="s-label">Tage</div><div class="s-val dim" id="stat-tage">—</div></div>
+          <div class="stat"><div class="s-label">Soll h</div><div class="s-val dim" id="stat-soll">—</div></div>
+          <div class="stat"><div class="s-label">Ist h</div><div class="s-val dim" id="stat-ist">—</div></div>
+          <div class="stat"><div class="s-label">Saldo h</div><div class="s-val dim" id="stat-saldo">—</div></div>
+        </div>
+        <div class="stats-divider"></div>
+        <div class="stats-grid-3">
+          <div class="stat"><div class="s-label">Verdient</div><div class="s-val accent" id="stat-chf-ist">—</div></div>
+          <div class="stat"><div class="s-label">Soll CHF</div><div class="s-val dim" id="stat-chf-soll">—</div></div>
+          <div class="stat"><div class="s-label">CHF Saldo</div><div class="s-val dim" id="stat-chf-saldo">—</div></div>
+        </div>
+      </div>
+      <div class="calendar">
+        <div class="cal-header" id="cal-header"></div>
+        <div class="cal-body"   id="cal-body"></div>
+      </div>
+      <div class="cal-hint">Eintrag antippen zum Bearbeiten</div>
+    </div>
+
+    <!-- LISTE -->
+    <div id="view-liste" class="hidden">
+      <div class="list-total" id="list-total-card">
+        <div class="stats-label">Gesamt alle Einträge</div>
+        <div class="stats-grid">
+          <div class="stat left"><div class="s-label">Tage</div><div class="s-val lg" id="lt-tage">—</div></div>
+          <div class="stat left"><div class="s-label">Stunden</div><div class="s-val lg" id="lt-stunden">—</div></div>
+          <div class="stat left"><div class="s-label">Verdient</div><div class="s-val lg accent" id="lt-chf">—</div></div>
+          <div class="stat left"><div class="s-label">Saldo h</div><div class="s-val" id="lt-saldo">—</div></div>
+        </div>
+      </div>
+      <div class="list-entries" id="list-entries"></div>
+      <div class="empty hidden" id="list-empty">Noch keine Einträge vorhanden.</div>
+    </div>
+
+    <!-- BACKUP -->
+    <div class="backup-section">
+      <div class="backup-label">Backup</div>
+      <div class="backup-grid">
+        <button class="btn-backup" id="export-btn">&#8595; Export</button>
+        <label class="btn-backup">
+          &#8593; Import
+          <input type="file" id="import-file" accept=".json" style="display:none;">
+        </label>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MODALS ═════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modal-import">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Backup importieren?</div>
+      <button class="modal-x" id="imp-x">&#215;</button>
+    </div>
+    <div class="modal-body">
+      Dies ersetzt alle aktuellen Daten (<strong id="imp-cur">0</strong>) durch
+      <strong id="imp-new">0</strong> aus dem Backup.
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" id="imp-cancel">Abbrechen</button>
+      <button class="btn-confirm" id="imp-ok">Importieren</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modal-err">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Import fehlgeschlagen</div>
+      <button class="modal-x" id="err-x">&#215;</button>
+    </div>
+    <div class="modal-body">Die Datei ist beschädigt oder hat das falsche Format.</div>
+    <button class="btn-ok" id="err-ok">OK</button>
+  </div>
+</div>
+
+<!-- Delete confirm modal -->
+<div class="modal-overlay hidden" id="modal-delete">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Eintrag löschen?</div>
+      <button class="modal-x" id="del-x">&#215;</button>
+    </div>
+    <div class="modal-body">
+      Eintrag vom <strong id="del-date-label"></strong> wird permanent gelöscht.
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" id="del-cancel">Abbrechen</button>
+      <button class="btn-confirm danger" id="del-ok">Löschen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Konstanten ──────────────────────────────────────────
+const PASS        = 'arbeit2026';
+const SOLL_VM     = 4.5;
+const SOLL_NM     = 4.0;
+const SOLL_TAG    = SOLL_VM + SOLL_NM;
+const LS_DATA     = 'arbeitsstunden_v1';
+const LS_AUTH     = 'arb-auth';
+const LS_SETTINGS = 'arb-settings';
+const WEEKDAYS    = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+const MONTHS      = ['Januar','Februar','März','April','Mai','Juni',
+                     'Juli','August','September','Oktober','November','Dezember'];
+const MONTHS_S    = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+
+// ── State ───────────────────────────────────────────────
+let entries           = {};
+let settings          = { rate: 32.20, monatssoll: 2760.30 };
+let viewYear          = new Date().getFullYear();
+let viewMonth         = new Date().getMonth();
+let currentTab        = 'kalender';
+let pendingImport     = null;
+let pendingDeleteKey  = null;
+let settingsOpen      = false;
+let lastMonthDir      = 0; // -1 = left, 1 = right
+
+// ── Utils ───────────────────────────────────────────────
+const todayKey = () => new Date().toISOString().slice(0,10);
+const parseKey = k  => { const [y,m,d]=k.split('-').map(Number); return new Date(y,m-1,d); };
+const saldo    = (vm,nm) => (Number(vm)+Number(nm)) - SOLL_TAG;
+const salCls   = v  => v>=0 ? 'green' : 'red';
+const fmtHRaw  = h  => { const hrs=Math.floor(h), mins=Math.round((h-hrs)*60); return mins===0?`${hrs}h`:`${hrs}h ${mins}m`; };
+const fmtH     = h  => { const abs=Math.abs(h), s=h>=0?'+':'−', hrs=Math.floor(abs), mins=Math.round((abs-hrs)*60); return mins===0?`${s}${hrs}h`:`${s}${hrs}h ${mins}m`; };
+const fmtCHF   = v  => {
+  const sign = v < 0 ? '−' : '';
+  const abs  = Math.abs(v);
+  const str  = abs.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  return `${sign}CHF ${str}`;
+};
+const fmtCHFsaldo = v => {
+  const sign = v >= 0 ? '+' : '−';
+  const abs  = Math.abs(v);
+  const str  = abs.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  return `${sign}CHF ${str}`;
+};
+
+const ls = {
+  get : k     => { try { return localStorage.getItem(k); } catch { return null; } },
+  set : (k,v) => { try { localStorage.setItem(k,v); } catch {} }
+};
+
+function loadEntries()  { try { const r=ls.get(LS_DATA); if(r) entries=JSON.parse(r); } catch { entries={}; } }
+function saveEntries()  { ls.set(LS_DATA, JSON.stringify(entries)); }
+function loadSettings() { try { const r=ls.get(LS_SETTINGS); if(r) settings={...settings,...JSON.parse(r)}; } catch {} }
+function saveSettings() { ls.set(LS_SETTINGS, JSON.stringify(settings)); }
+
+function formatDate(k) {
+  const d=parseKey(k), wd=WEEKDAYS[(d.getDay()+6)%7];
+  return `${wd}, ${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+}
+function sollH() { return settings.rate > 0 ? settings.monatssoll / settings.rate : 0; }
+
+// ── TOAST ───────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg, color) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = color || 'var(--green)';
+  t.style.color = color ? '#fff' : '#0a1a10';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── RIPPLE ──────────────────────────────────────────────
+function addRipple(btn) {
+  btn.addEventListener('click', function(e) {
+    const rect = this.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top  - size / 2;
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    ripple.style.cssText = `width:${size}px;height:${size}px;left:${x}px;top:${y}px`;
+    this.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 500);
+  });
+}
+
+// ── COUNTER ANIMATION ────────────────────────────────────
+function animateCounter(el, endVal, formatter, duration) {
+  const startVal = 0;
+  const start = performance.now();
+  function tick(now) {
+    const pct = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - pct, 3); // ease-out cubic
+    const cur  = startVal + (endVal - startVal) * ease;
+    el.textContent = formatter(cur);
+    if (pct < 1) requestAnimationFrame(tick);
+    else el.textContent = formatter(endVal);
+  }
+  requestAnimationFrame(tick);
+}
+
+// ── AUTH ────────────────────────────────────────────────
+function initAuth() {
+  if (ls.get(LS_AUTH)==='1') { showApp(); return; }
+  const pw=document.getElementById('lock-pw'), err=document.getElementById('lock-err');
+  const lockBtn = document.getElementById('lock-btn');
+  addRipple(lockBtn);
+  const tryLogin=()=>{
+    if (pw.value===PASS) { ls.set(LS_AUTH,'1'); showApp(); }
+    else { err.textContent='Falsches Passwort'; pw.classList.add('error'); setTimeout(()=>{ err.textContent=''; pw.classList.remove('error'); },1500); }
+  };
+  lockBtn.addEventListener('click', tryLogin);
+  pw.addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
+  pw.focus();
+}
+
+function showApp() {
+  document.getElementById('lock-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  loadEntries(); loadSettings();
+  initApp();
+}
+
+// ── SETTINGS TOGGLE ─────────────────────────────────────
+function toggleSettings() {
+  settingsOpen = !settingsOpen;
+  document.getElementById('settings-body').classList.toggle('hidden', !settingsOpen);
+  document.getElementById('settings-chevron').classList.toggle('open', settingsOpen);
+}
+
+function updateSettingsUI() {
+  document.getElementById('inp-rate').value       = settings.rate;
+  document.getElementById('inp-monatssoll').value = settings.monatssoll;
+  updateDerived();
+  updateHeader();
+}
+
+function updateDerived() {
+  const r  = parseFloat(document.getElementById('inp-rate').value) || settings.rate;
+  const ms = parseFloat(document.getElementById('inp-monatssoll').value) || settings.monatssoll;
+  const h  = r > 0 ? (ms / r).toFixed(2) : '—';
+  document.getElementById('soll-h-derived').textContent = r > 0 ? `${h}h` : '—';
+}
+
+function updateHeader() {
+  document.getElementById('header-sub').textContent =
+    `CHF ${settings.rate.toFixed(2)}/h · Soll ${fmtCHF(settings.monatssoll)}/Mt · ${sollH().toFixed(2)}h`;
+}
+
+// ── APP INIT ────────────────────────────────────────────
+function initApp() {
+  updateSettingsUI();
+
+  const inpDate = document.getElementById('inp-date');
+  const inpVm   = document.getElementById('inp-vm');
+  const inpNm   = document.getElementById('inp-nm');
+  const preview = document.getElementById('preview');
+  const btnSave = document.getElementById('btn-save');
+
+  addRipple(btnSave);
+
+  inpDate.value = todayKey();
+  inpDate.removeAttribute('min'); inpDate.removeAttribute('max');
+
+  // Preview
+  const updatePreview = () => {
+    const vm=parseFloat(inpVm.value)||0, nm=parseFloat(inpNm.value)||0;
+    if (inpVm.value!==''||inpNm.value!=='') {
+      const sal=saldo(vm,nm), h=vm+nm, chf=h*settings.rate;
+      document.getElementById('prev-total').textContent=fmtHRaw(h);
+      const ps=document.getElementById('prev-saldo');
+      ps.textContent=fmtH(sal); ps.style.color=sal>=0?'var(--green)':'var(--red)';
+      document.getElementById('prev-chf').textContent=fmtCHF(chf);
+      preview.classList.remove('hidden');
+    } else preview.classList.add('hidden');
+  };
+  inpVm.addEventListener('input', updatePreview);
+  inpNm.addEventListener('input', updatePreview);
+
+  // Save entry
+  btnSave.addEventListener('click', () => {
+    const date=inpDate.value;
+    const vm=parseFloat(inpVm.value)||0, nm=parseFloat(inpNm.value)||0;
+    if (!date||(vm===0&&nm===0)) return;
+    entries[date]={vm,nm}; saveEntries(); render();
+    showToast('✓ Gespeichert');
+    inpVm.value=''; inpNm.value=''; preview.classList.add('hidden');
+  });
+
+  // Settings inputs → live derived update
+  document.getElementById('inp-rate').addEventListener('input', updateDerived);
+  document.getElementById('inp-monatssoll').addEventListener('input', updateDerived);
+
+  // Save settings
+  document.getElementById('btn-settings-save').addEventListener('click', () => {
+    const r  = parseFloat(document.getElementById('inp-rate').value);
+    const ms = parseFloat(document.getElementById('inp-monatssoll').value);
+    if (!isNaN(r)&&r>0) settings.rate=r;
+    if (!isNaN(ms)&&ms>0) settings.monatssoll=ms;
+    saveSettings(); updateHeader(); render();
+    showToast('✓ Einstellungen gespeichert');
+  });
+
+  // Logout
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    ls.set(LS_AUTH,'0');
+    document.getElementById('app').classList.add('hidden');
+    document.getElementById('lock-screen').classList.remove('hidden');
+    document.getElementById('lock-pw').value='';
+  });
+
+  // Export
+  document.getElementById('export-btn').addEventListener('click', () => {
+    const blob=new Blob([JSON.stringify({entries,settings},null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=`arbeitsstunden-${todayKey()}.json`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    showToast('↓ Export erstellt');
+  });
+
+  // Import
+  document.getElementById('import-file').addEventListener('change', e => {
+    const file=e.target.files?.[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try {
+        const parsed=JSON.parse(ev.target.result);
+        const parsedEntries = parsed.entries || parsed;
+        if (typeof parsedEntries!=='object'||Array.isArray(parsedEntries)) throw 0;
+        pendingImport = parsed;
+        document.getElementById('imp-cur').textContent=`${Object.keys(entries).length} Einträge`;
+        document.getElementById('imp-new').textContent=`${Object.keys(parsedEntries).length} Einträge`;
+        document.getElementById('modal-import').classList.remove('hidden');
+      } catch { document.getElementById('modal-err').classList.remove('hidden'); }
+    };
+    reader.readAsText(file); e.target.value='';
+  });
+
+  const closeImp=()=>{ pendingImport=null; document.getElementById('modal-import').classList.add('hidden'); };
+  document.getElementById('imp-x').addEventListener('click', closeImp);
+  document.getElementById('imp-cancel').addEventListener('click', closeImp);
+  document.getElementById('imp-ok').addEventListener('click', () => {
+    if (pendingImport.entries) {
+      entries = pendingImport.entries;
+      if (pendingImport.settings) { settings={...settings,...pendingImport.settings}; saveSettings(); updateSettingsUI(); }
+    } else {
+      entries = pendingImport;
+    }
+    saveEntries(); closeImp(); render();
+    showToast('↑ Import erfolgreich');
+  });
+  const closeErr=()=>document.getElementById('modal-err').classList.add('hidden');
+  document.getElementById('err-x').addEventListener('click', closeErr);
+  document.getElementById('err-ok').addEventListener('click', closeErr);
+
+  // Delete modal
+  const closeDelModal=()=>{ pendingDeleteKey=null; document.getElementById('modal-delete').classList.add('hidden'); };
+  document.getElementById('del-x').addEventListener('click', closeDelModal);
+  document.getElementById('del-cancel').addEventListener('click', closeDelModal);
+  document.getElementById('del-ok').addEventListener('click', () => {
+    if (pendingDeleteKey) {
+      delete entries[pendingDeleteKey];
+      saveEntries();
+      closeDelModal();
+      render();
+      showToast('Eintrag gelöscht', 'var(--red)');
+    }
+  });
+
+  // Show skeleton then render
+  showSkeletonCalendar();
+  setTimeout(() => renderCalendar(), 280);
+}
+
+// ── Delete (with confirm) ────────────────────────────────
+function deleteEntry(key) {
+  pendingDeleteKey = key;
+  document.getElementById('del-date-label').textContent = formatDate(key);
+  document.getElementById('modal-delete').classList.remove('hidden');
+}
+
+// ── Load ─────────────────────────────────────────────────
+function loadEntry(key) {
+  const e=entries[key]; if(!e) return;
+  document.getElementById('inp-date').value=key;
+  document.getElementById('inp-vm').value=e.vm;
+  document.getElementById('inp-nm').value=e.nm;
+  document.getElementById('inp-vm').dispatchEvent(new Event('input'));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── Tabs / Month ─────────────────────────────────────────
+function switchTab(t) {
+  currentTab=t;
+  document.getElementById('view-kalender').classList.toggle('hidden',t!=='kalender');
+  document.getElementById('view-liste').classList.toggle('hidden',t!=='liste');
+  document.getElementById('tab-kal').classList.toggle('active',t==='kalender');
+  document.getElementById('tab-lst').classList.toggle('active',t==='liste');
+  render();
+}
+
+function changeMonth(delta) {
+  lastMonthDir = delta;
+  viewMonth += delta;
+  if(viewMonth>11){viewMonth=0;viewYear++;} if(viewMonth<0){viewMonth=11;viewYear--;}
+  renderCalendar();
+}
+
+function render() { currentTab==='kalender'?renderCalendar():renderList(); }
+
+// ── SKELETON ─────────────────────────────────────────────
+function showSkeletonCalendar() {
+  const y=viewYear, m=viewMonth;
+  document.getElementById('month-title').textContent=`${MONTHS[m]} ${y}`;
+  document.getElementById('cal-header').innerHTML=WEEKDAYS.map(d=>`<div>${d}</div>`).join('');
+  const firstDay=new Date(y,m,1), daysInMonth=new Date(y,m+1,0).getDate();
+  const startOffset=(firstDay.getDay()+6)%7;
+  let html='';
+  for(let i=0;i<startOffset;i++) html+=`<div class="cal-cell"></div>`;
+  for(let d=1;d<=daysInMonth;d++) html+=`<div class="cal-cell skeleton"></div>`;
+  document.getElementById('cal-body').innerHTML=html;
+}
+
+// ── KALENDER ─────────────────────────────────────────────
+function renderCalendar() {
+  const y=viewYear, m=viewMonth;
+  document.getElementById('month-title').textContent=`${MONTHS[m]} ${y}`;
+  document.getElementById('total-label').textContent=`Total ${MONTHS[m]} ${y}`;
+
+  const mKeys=Object.keys(entries).filter(k=>{ const d=parseKey(k); return d.getFullYear()===y&&d.getMonth()===m; });
+  const mTotal  = mKeys.reduce((s,k)=>s+entries[k].vm+entries[k].nm, 0);
+  const mSaldo  = mKeys.reduce((s,k)=>s+saldo(entries[k].vm,entries[k].nm), 0);
+  const mDays   = mKeys.length;
+  const mSoll   = mDays * SOLL_TAG;
+  const mChfIst = mTotal * settings.rate;
+  const mChfSol = settings.monatssoll;
+  const mChfSal = mChfIst - mChfSol;
+
+  const setStat=(id,val,cls)=>{ const el=document.getElementById(id); el.textContent=val; el.className='s-val'+(cls?' '+cls:''); };
+
+  if(mDays===0) {
+    ['stat-tage','stat-soll','stat-ist','stat-saldo'].forEach(id=>setStat(id,'—','dim'));
+    setStat('stat-chf-ist','—','dim'); setStat('stat-chf-soll','—','dim'); setStat('stat-chf-saldo','—','dim');
+  } else {
+    // animate numeric stats
+    const tageEl = document.getElementById('stat-tage');
+    tageEl.className='s-val'; animateCounter(tageEl, mDays, v=>Math.round(v).toString(), 400);
+
+    setStat('stat-soll', fmtHRaw(mSoll),'');
+    setStat('stat-ist',  fmtHRaw(mTotal),'');
+    setStat('stat-saldo',fmtH(mSaldo), salCls(mSaldo));
+
+    const chfIstEl = document.getElementById('stat-chf-ist');
+    chfIstEl.className='s-val accent';
+    animateCounter(chfIstEl, mChfIst, v=>fmtCHF(v), 500);
+
+    setStat('stat-chf-soll',  fmtCHF(mChfSol), '');
+    const chfSalEl = document.getElementById('stat-chf-saldo');
+    chfSalEl.className='s-val '+salCls(mChfSal);
+    animateCounter(chfSalEl, mChfSal, v=>fmtCHFsaldo(v), 500);
+  }
+
+  document.getElementById('cal-header').innerHTML=WEEKDAYS.map(d=>`<div>${d}</div>`).join('');
+
+  const firstDay=new Date(y,m,1), daysInMonth=new Date(y,m+1,0).getDate();
+  const startOffset=(firstDay.getDay()+6)%7, tKey=todayKey();
+  let html='';
+  for(let i=0;i<startOffset;i++) html+=`<div class="cal-cell"></div>`;
+
+  for(let day=1;day<=daysInMonth;day++){
+    const key=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const entry=entries[key], isToday=key===tKey;
+    const col=(startOffset+day-1)%7, isWE=col>=5;
+    const dnCls='day-num'+(isToday?' today':isWE?' weekend':'');
+
+    // heatmap: intensity based on hours worked vs target
+    let bgStyle='';
+    if(entry){
+      const pct = Math.min((entry.vm + entry.nm) / SOLL_TAG, 1.4);
+      const alpha = 0.13 + pct * 0.22;
+      bgStyle=`style="background:rgba(200,169,110,${alpha.toFixed(2)})"`;
+    }
+
+    const cellCls='cal-cell'+(entry?' has-entry':'');
+    let inner=`<div class="${dnCls}">${day}</div>`;
+    if(entry){
+      inner+=`<div class="cell-h">${entry.vm+entry.nm}h</div>`;
+    }
+    const click=entry?`onclick="loadEntry('${key}')"` :'';
+    html+=`<div class="${cellCls}" ${bgStyle} ${click}>${inner}</div>`;
+  }
+
+  const calBody = document.getElementById('cal-body');
+  // slide direction class
+  calBody.className = 'cal-body';
+  if (lastMonthDir === -1) calBody.classList.add('slide-right');
+  else if (lastMonthDir === 1) calBody.classList.add('slide-left');
+  lastMonthDir = 0;
+
+  calBody.innerHTML = html;
+}
+
+// ── LISTE ────────────────────────────────────────────────
+function renderList() {
+  const keys=Object.keys(entries).sort().reverse();
+  const totalCard=document.getElementById('list-total-card');
+
+  if(keys.length>0){
+    totalCard.style.display='';
+    const totalH   = keys.reduce((s,k)=>s+entries[k].vm+entries[k].nm, 0);
+    const totalSal = keys.reduce((s,k)=>s+saldo(entries[k].vm,entries[k].nm), 0);
+    const totalChf = totalH * settings.rate;
+
+    const tageEl = document.getElementById('lt-tage');
+    tageEl.className='s-val lg';
+    animateCounter(tageEl, keys.length, v=>Math.round(v).toString(), 350);
+
+    document.getElementById('lt-stunden').textContent = fmtHRaw(totalH);
+
+    const chfEl = document.getElementById('lt-chf');
+    chfEl.className='s-val lg accent';
+    animateCounter(chfEl, totalChf, v=>fmtCHF(v), 450);
+
+    const ltSaldo=document.getElementById('lt-saldo');
+    ltSaldo.textContent=fmtH(totalSal); ltSaldo.className='s-val '+salCls(totalSal);
+  } else {
+    totalCard.style.display='none';
+  }
+
+  const container=document.getElementById('list-entries'), empty=document.getElementById('list-empty');
+  if(keys.length===0){ container.innerHTML=''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+
+  const byMonth={};
+  keys.forEach(key=>{
+    const d=parseKey(key), mk=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if(!byMonth[mk]) byMonth[mk]=[];
+    byMonth[mk].push(key);
+  });
+
+  let html='';
+  Object.keys(byMonth).sort().reverse().forEach(mk=>{
+    const [y,m]=mk.split('-').map(Number);
+    const mKeys=byMonth[mk];
+    const mH   = mKeys.reduce((s,k)=>s+entries[k].vm+entries[k].nm, 0);
+    const mChf = mH * settings.rate;
+    html+=`<div class="list-month-header">${MONTHS[m-1]} ${y} · ${fmtHRaw(mH)}<span>${fmtCHF(mChf)}</span></div>`;
+    mKeys.forEach(key=>{
+      const e=entries[key], sal=saldo(e.vm,e.nm), chf=(e.vm+e.nm)*settings.rate;
+      html+=`<div class="list-entry" id="entry-${key}">
+        <div class="list-entry-top">
+          <span class="list-entry-date">${formatDate(key)}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="list-entry-chf">${fmtCHF(chf)}</span>
+            <button class="delete-btn" onclick="deleteEntry('${key}')">&#215;</button>
+          </div>
+        </div>
+        <div class="list-entry-nums">
+          <span>VM <b>${e.vm}h</b></span>
+          <span>NM <b>${e.nm}h</b></span>
+          <span class="saldo-cell ${salCls(sal)}">${fmtH(sal)}</span>
+        </div>
+      </div>`;
+    });
+  });
+  container.innerHTML=html;
+}
+
+// ── BOOT ─────────────────────────────────────────────────
+initAuth();
+</script>
+</body>
+</html>
