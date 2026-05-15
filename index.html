@@ -37,7 +37,8 @@
       background: var(--bg); color: var(--text);
       font-family: 'Outfit', sans-serif;
       min-height: 100vh; max-width: 480px; margin: 0 auto;
-      padding-bottom: 50px; padding-top: env(safe-area-inset-top);
+      padding-bottom: calc(50px + env(safe-area-inset-bottom));
+      /* kein padding-top — header übernimmt safe-area */
     }
 
     input[type=number]::-webkit-inner-spin-button,
@@ -79,16 +80,18 @@
     }
     .lock-btn:active { opacity: 0.85; }
 
-    /* ── HEADER (glassmorphism, besser lesbar) ── */
+    /* ── HEADER (Dynamic Island safe area) ── */
     .header {
-      background: rgba(30, 32, 37, 0.92);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      background: rgba(22, 24, 28, 0.96);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
       border-bottom: 1px solid rgba(255,255,255,0.08);
-      padding: 15px 15px 12px; position: sticky; top: 0; z-index: 10;
+      /* top-padding = safe-area + eigenes padding → deckt Dynamic Island ab */
+      padding: calc(env(safe-area-inset-top) + 12px) 15px 12px;
+      position: sticky; top: 0; z-index: 10;
       display: flex; align-items: flex-start; justify-content: space-between;
     }
-    .header h1 { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; text-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+    .header h1 { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; }
     .header p  { font-size: 0.65rem; color: rgba(180,185,200,0.85); margin-top: 3px; letter-spacing: 0.04em; }
     .logout-btn {
       background: none; border: 1px solid var(--border); color: var(--muted);
@@ -456,18 +459,20 @@
     }
     .progress-ring-svg { animation: ring-holo 3s ease-in-out infinite; }
 
-    /* B – Header Chrom-Shimmer */
+    /* B – Header Chrom-Shimmer (mit drop-shadow für Lesbarkeit) */
     .header h1 {
-      background: linear-gradient(90deg, #edeef2 0%, #c8a96e 40%, #fff 55%, #c8a96e 70%, #edeef2 100%);
-      background-size: 250% auto;
+      background: linear-gradient(90deg, #ffffff 0%, #c8a96e 38%, #fffbe8 52%, #c8a96e 66%, #ffffff 100%);
+      background-size: 260% auto;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      animation: chrome-sweep 4s linear infinite;
+      animation: chrome-sweep 4.5s linear infinite;
+      /* drop-shadow wirkt auch auf transparent-text */
+      filter: drop-shadow(0 1px 6px rgba(0,0,0,0.9)) drop-shadow(0 0 12px rgba(0,0,0,0.6));
     }
     @keyframes chrome-sweep {
-      0%   { background-position: 200% center; }
-      100% { background-position: -50% center; }
+      0%   { background-position: 220% center; }
+      100% { background-position: -60% center; }
     }
 
     /* C – Kalender-Zelle Distortion beim Antippen */
@@ -502,19 +507,19 @@
 
     /* F – Glitch Stats beim Monatswechsel */
     @keyframes glitch-x {
-      0%,100% { clip-path: inset(0 0 100% 0); transform: translateX(0); }
-      20%     { clip-path: inset(30% 0 50% 0); transform: translateX(-4px); color: #e07272; }
-      40%     { clip-path: inset(60% 0 20% 0); transform: translateX(4px); color: #5dba7f; }
-      60%     { clip-path: inset(10% 0 70% 0); transform: translateX(-2px); }
-      80%     { clip-path: inset(80% 0 5% 0);  transform: translateX(2px); }
+      0%   { clip-path: inset(10% 0 60% 0); transform: translateX(-5px); opacity: 1; color: #e07272; }
+      25%  { clip-path: inset(55% 0 15% 0); transform: translateX(5px);  color: #5dba7f; }
+      50%  { clip-path: inset(25% 0 45% 0); transform: translateX(-3px); color: var(--accent); }
+      75%  { clip-path: inset(70% 0 5% 0);  transform: translateX(3px);  color: #e07272; }
+      100% { clip-path: inset(0% 0 95% 0);  transform: translateX(0);    opacity: 0; }
     }
+    .stats-card.glitching .s-val { position: relative; overflow: visible; }
     .stats-card.glitching .s-val::before {
       content: attr(data-val);
       position: absolute; left: 0; top: 0; width: 100%;
-      animation: glitch-x 0.35s steps(2) forwards;
-      color: var(--accent);
+      animation: glitch-x 0.3s linear forwards;
+      pointer-events: none;
     }
-    .stats-card.glitching .s-val { position: relative; }
 
     .hidden { display: none !important; }
   </style>
@@ -831,15 +836,18 @@ function animateCounter(el, endVal, formatter, duration) {
 // ── #3 DYNAMISCHER HINTERGRUND ──────────────────────────
 function updateDynamicBg() {
   const h = new Date().getHours() + new Date().getMinutes() / 60;
-  // Morgen (6-10): warm, Mittag (10-14): neutral, Abend (18-22): blau, Nacht: tief dunkel
   let r, g, b;
-  if      (h >= 6  && h < 10) { r=48;  g=44;  b=42; }  // warm morgen
-  else if (h >= 10 && h < 14) { r=44;  g=46;  b=53; }  // neutral tag
-  else if (h >= 14 && h < 18) { r=42;  g=44;  b=50; }  // nachmittag
-  else if (h >= 18 && h < 22) { r=36;  g=38;  b=52; }  // abend blau
-  else                         { r=28;  g=28;  b=36; }  // nacht tief
-  document.documentElement.style.setProperty('--bg',      `rgb(${r},${g},${b})`);
-  document.documentElement.style.setProperty('--surface', `rgb(${r+8},${g+8},${b+9})`);
+  if      (h >= 6  && h < 10) { r=46; g=42; b=40; }  // morgen warm
+  else if (h >= 10 && h < 14) { r=44; g=46; b=53; }  // tag neutral
+  else if (h >= 14 && h < 18) { r=42; g=44; b=50; }  // nachmittag
+  else if (h >= 18 && h < 22) { r=34; g=36; b=52; }  // abend blau
+  else                         { r=26; g=26; b=34; }  // nacht tief
+  const root = document.documentElement;
+  root.style.setProperty('--bg',       `rgb(${r},${g},${b})`);
+  root.style.setProperty('--surface',  `rgb(${r+8},${g+8},${b+9})`);
+  root.style.setProperty('--surface2', `rgb(${r+15},${g+15},${b+17})`);
+  root.style.setProperty('--entry-bg', `rgb(${r+14},${g+14},${b+16})`);
+  root.style.setProperty('--border',   `rgba(255,255,255,${r > 40 ? 0.07 : 0.05})`);
   document.body.style.background = `rgb(${r},${g},${b})`;
 }
 updateDynamicBg();
@@ -857,19 +865,18 @@ function haptic(pattern) {
 
 // ── #2 BOUNCE NEUE ZELLE ─────────────────────────────────
 function bounceCell(dateKey) {
-  const cells = document.querySelectorAll('.cal-cell');
-  const y = viewYear, m = viewMonth;
   const [ky, km, kd] = dateKey.split('-').map(Number);
-  if (ky !== y || km !== m + 1) return;
-  const firstDay = new Date(y, m, 1);
+  if (ky !== viewYear || km !== viewMonth + 1) return;
+  const firstDay = new Date(viewYear, viewMonth, 1);
   const startOffset = (firstDay.getDay() + 6) % 7;
   const idx = startOffset + kd - 1;
+  const cells = document.querySelectorAll('#cal-body .cal-cell');
   const cell = cells[idx];
   if (!cell) return;
   cell.classList.remove('just-added');
   void cell.offsetWidth;
   cell.classList.add('just-added');
-  cell.addEventListener('animationend', () => cell.classList.remove('just-added'), {once:true});
+  cell.addEventListener('animationend', () => cell.classList.remove('just-added'), {once: true});
 }
 
 // ── F GLITCH STATS ───────────────────────────────────────
@@ -908,18 +915,21 @@ function launchConfetti() {
 
 // ── PROGRESS RING ────────────────────────────────────────
 const RING_CIRC = 263.9;
+const confettiFiredMonths = new Set();
 function updateProgressRing(pct) {
   const fill = document.getElementById('ring-fill');
   const label = document.getElementById('ring-pct');
   if (!fill || !label) return;
-  const clamped = Math.min(pct, 1.5);
-  const offset  = RING_CIRC * (1 - Math.min(clamped, 1));
+  const offset = RING_CIRC * (1 - Math.min(pct, 1));
   fill.style.strokeDashoffset = offset;
   fill.classList.toggle('over-target', pct >= 1);
   label.textContent = Math.round(pct * 100) + '%';
   label.style.color = pct >= 1 ? 'var(--green)' : 'var(--text)';
-  if (pct >= 1 && !confettiFired) { confettiFired=true; launchConfetti(); }
-  if (pct < 1) confettiFired = false;
+  const monthKey = `${viewYear}-${viewMonth}`;
+  if (pct >= 1 && !confettiFiredMonths.has(monthKey)) {
+    confettiFiredMonths.add(monthKey);
+    launchConfetti();
+  }
 }
 
 // ── AUTH ────────────────────────────────────────────────
