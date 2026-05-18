@@ -232,7 +232,7 @@
 
     /* ════ HERO SPREAD ════ */
     .hero {
-      padding: 56px 24px 48px;
+      padding: 32px 24px 32px;
       text-align: center;
       position: relative;
     }
@@ -241,7 +241,7 @@
       font-size: 0.62rem; font-weight: 500;
       letter-spacing: 0.28em; text-transform: uppercase;
       color: var(--paper-dim);
-      margin-bottom: 32px;
+      margin-bottom: 20px;
     }
     .hero-number {
       font-family: var(--serif);
@@ -272,22 +272,14 @@
       margin-left: 0.05em;
       color: var(--paper-dim);
     }
-    .hero-unit {
-      display: block;
-      font-family: var(--sans);
-      font-size: 0.7rem; font-weight: 500;
-      letter-spacing: 0.32em; text-transform: uppercase;
-      color: var(--paper-dim);
-      margin-top: 16px;
-      margin-bottom: 32px;
-    }
+    .hero-unit { display: none; }
     .hero-meta {
       font-family: var(--sans);
       font-size: 0.68rem; font-weight: 400;
       color: var(--paper-low);
       letter-spacing: 0.06em;
-      line-height: 1.6;
-      max-width: 320px; margin: 0 auto;
+      line-height: 1.8;
+      max-width: 320px; margin: 20px auto 0;
     }
     .hero-meta strong {
       color: var(--paper); font-weight: 500;
@@ -329,12 +321,12 @@
 
     /* ════ ENTRY FORM ════ */
     .entry-spread {
-      padding: 32px 24px 40px;
+      padding: 24px 24px 32px;
       border-bottom: 1px solid var(--rule);
     }
     .entry-heading {
       display: flex; justify-content: space-between; align-items: baseline;
-      margin-bottom: 28px;
+      margin-bottom: 20px;
     }
     .entry-title {
       font-family: var(--serif); font-style: italic;
@@ -895,7 +887,8 @@
       <div class="entry-date-label" id="entry-date-label">Heute</div>
     </div>
     <div class="entry-fields">
-      <div class="entry-row" style="display:none">
+      <div class="entry-row">
+        <label for="inp-date">Datum</label>
         <input type="date" id="inp-date" />
       </div>
       <div class="entry-row" id="row-vm">
@@ -1399,35 +1392,35 @@ function renderHero(stats) {
     return;
   }
 
-  eyebrow.textContent = `Monatssaldo · ${MONTHS[viewMonth]} ${viewYear}`;
-  unitEl.style.display = '';
-  unitEl.textContent = 'CHF';
+  eyebrow.textContent = `Stunden · ${MONTHS[viewMonth]} ${viewYear}`;
+  unitEl.style.display = 'none';
+  numEl.className = 'hero-number';
 
-  const v = stats.chfSaldo;
-  const positive = v >= 0;
-  numEl.className = 'hero-number ' + (positive ? 'is-positive' : 'is-negative');
-
-  const abs = Math.abs(v);
-  const intPart = Math.floor(abs);
-  const decPart = Math.round((abs - intPart) * 100);
-  const intStr  = intPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "'");
-  const decStr  = decPart.toString().padStart(2, '0');
-  const sign    = positive ? '+' : '−';
+  // Hero = geleistete Stunden (Integer + Minuten als Mantissa)
+  const totalH = stats.ist;
+  const hrs  = Math.floor(totalH);
+  const mins = Math.round((totalH - hrs) * 60);
+  const hrsStr = hrs.toString();
 
   numEl.innerHTML =
-    `<span class="hero-sign">${sign}</span>` +
-    `<span class="hero-int">${intStr}</span>` +
-    `<span class="hero-mantissa">,${decStr}</span>`;
+    `<span class="hero-int">${hrsStr}</span>` +
+    `<span class="hero-mantissa"> h${mins > 0 ? `<span style="font-size:0.6em;vertical-align:0.2em"> ${mins}m</span>` : ''}</span>`;
 
-  const pct = settings.monatssoll > 0 ? Math.round(stats.chfIst / settings.monatssoll * 100) : 0;
+  const salH  = stats.saldoH;
+  const salSign = salH >= 0 ? '+' : '−';
+  const salAbs  = Math.abs(salH);
+  const salHrs  = Math.floor(salAbs);
+  const salMins = Math.round((salAbs - salHrs) * 60);
+  const salStr  = salMins > 0 ? `${salSign}${salHrs}h ${salMins}m` : `${salSign}${salHrs}h`;
+
   metaEl.innerHTML =
     `<strong>${stats.days}</strong> ${stats.days===1?'tag':'tage'}` +
     `<span class="sep">·</span>` +
-    `<strong>${fmtHRaw(stats.ist)}</strong> ist` +
+    `soll <strong>${fmtHRaw(stats.soll)}</strong>` +
     `<span class="sep">·</span>` +
-    `<strong>${fmtHRaw(stats.soll)}</strong> soll` +
+    `<strong style="color:${salH>=0?'var(--positive)':'var(--negative)'}">${salStr}</strong>` +
     `<span class="sep">·</span>` +
-    `<strong>${pct}%</strong> von monat`;
+    `<strong>${fmtCHF(stats.chfIst)}</strong>`;
 }
 
 // ── KALENDER ────────────────────────────────────────────
